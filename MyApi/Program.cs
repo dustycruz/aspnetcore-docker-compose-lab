@@ -13,7 +13,9 @@ var builder = WebApplication.CreateBuilder(args);
 var sqlConnectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException(
         "Connection string 'DefaultConnection' is not configured. " +
-        "Set the ConnectionStrings__DefaultConnection environment variable (docker-compose.yml does this for you).");
+        "docker-compose.yml sets it for the container. To run the API from Visual Studio or 'dotnet run', store it once with " +
+        "'dotnet user-secrets set \"ConnectionStrings:DefaultConnection\" \"<connection string>\" --project MyApi' " +
+        "(see docs/INSTALLATION.md, section 5.4).");
 
 var redisConnectionString = builder.Configuration.GetConnectionString("Redis")
     ?? throw new InvalidOperationException(

@@ -448,32 +448,40 @@ curl -X POST http://localhost:8080/api/products -H "Content-Type: application/js
 Stop the stack with `docker compose down`. Add `-v` to also delete the SQL Server and Redis data
 volumes.
 
-### 5.4 Optional – run the API outside Docker
+### 5.4 Optional – run the API outside Docker (Visual Studio F5 / `dotnet run`)
 
-Run only the databases in Docker, and the API with `dotnet run`. This is useful for debugging in an IDE.
+Run the databases in Docker and the API on your machine. This is useful for debugging in an IDE.
+Without this setup, pressing F5 stops with *"Connection string 'DefaultConnection' is not
+configured"*: only `docker-compose.yml` supplies the connection string, and it does so only to the
+container.
 
 **Working directory: repository root**
 
-```bash
-docker compose up -d --wait sqlserver redis
-```
+1. Start SQL Server and Redis (if the full stack is already running, they are too):
 
-bash / zsh (replace the password with the one in your `.env`):
+   ```bash
+   docker compose up -d --wait sqlserver redis
+   ```
 
-```bash
-export ConnectionStrings__DefaultConnection="Server=localhost,1433;Database=MyApiDb;User Id=sa;Password=<your .env password>;Encrypt=True;TrustServerCertificate=True"
-dotnet run --project MyApi --launch-profile http
-```
+2. Store the connection string once, using .NET's built-in **user secrets**. Secrets are kept in your
+   user profile, outside the repository, so the password is never committed. No package is needed:
+   `MyApi.csproj` already contains a `UserSecretsId`. Replace the password with the one in your `.env`;
+   the command is the same in Command Prompt, PowerShell and bash:
 
-PowerShell:
+   ```bash
+   dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Server=localhost,1433;Database=MyApiDb;User Id=sa;Password=<your .env password>;Encrypt=True;TrustServerCertificate=True" --project MyApi
+   dotnet user-secrets list --project MyApi
+   ```
 
-```powershell
-$env:ConnectionStrings__DefaultConnection = "Server=localhost,1433;Database=MyApiDb;User Id=sa;Password=<your .env password>;Encrypt=True;TrustServerCertificate=True"
-dotnet run --project MyApi --launch-profile http
-```
+3. Run the API: press **F5** in Visual Studio (profile **http**), or run:
 
-The API listens on <http://localhost:5003>. In Development it reads Redis from
-`appsettings.Development.json` (`localhost:6379`) and applies migrations on startup.
+   ```bash
+   dotnet run --project MyApi --launch-profile http
+   ```
+
+The API listens on <http://localhost:5003>. In Development it reads the user secret, reads Redis from
+`appsettings.Development.json` (`localhost:6379`), and applies migrations on startup. User secrets
+are only loaded in the Development environment, so the Docker container (Production) is unaffected.
 
 ---
 
@@ -493,6 +501,7 @@ The API listens on <http://localhost:5003>. In Development it reads Redis from
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>52113af6-5ecc-48a7-8943-cfac5d76a81c</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
